@@ -18,7 +18,6 @@
   },
   methods: {
     //   创建地图视图
-    //async await是成对出现的，意思是把那些模块加载完成之后才可以执行后面的代码
     async _createMapView() {
       const [Map, MapView] = await loadModules(['esri/Map', 'esri/views/MapView'], options);
       const map = new Map({

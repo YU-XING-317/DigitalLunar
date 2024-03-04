@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <el-container class="app-out-pannel">
-      <el-header class="sys-header">WebGIS一张图项目系统</el-header>
+      <el-header class="sys-header">WebGIS-数字月球系统</el-header>
       <el-container class="app-content-pannel">
         <el-aside class="sys-menu">
           <el-menu
