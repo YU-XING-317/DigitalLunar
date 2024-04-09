@@ -6,7 +6,7 @@ import { Camera } from "@element-plus/icons-vue";
   <div id="app">
     <el-header class="header">数字月球</el-header>
       <el-container class="app-content-pannel">
-        <el-aside class="menu">
+        <!-- <el-aside class="menu">
           <el-menu>
             <el-menu-item index="1">
               <i prefix-icon="Camera"></i>
@@ -17,7 +17,7 @@ import { Camera } from "@element-plus/icons-vue";
               <span slot="title">Three</span>
             </el-menu-item>
           </el-menu>
-        </el-aside>
+        </el-aside> -->
         <el-main class="main">
           <router-view></router-view>
         </el-main>
