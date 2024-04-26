@@ -5,8 +5,8 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 
-def tifToPngOriginalPixel(file_path):
-    file_path = r"globalDEM.tif"
+def tifToPngOriginalPixel():
+    file_path = r"TIF\\globalDEM.tif"
     ds = gdal.Open(file_path)
     driver = gdal.GetDriverByName('PNG')
     dst_ds = driver.CreateCopy(r'globalDEM.png', ds)
@@ -25,5 +25,5 @@ def img_resize(img_path):
     
 
 if __name__ == '__main__':
-    tifToPngOriginalPixel('globalDEM.tif')
+    tifToPngOriginalPixel()
     #img_resize(r'globalDEM.png')

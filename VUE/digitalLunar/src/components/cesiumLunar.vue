@@ -11,19 +11,21 @@ onMounted(() => {
     timeline: false,
     geocoder: false,
     CreditsDisplay: false,
+    //terrainProvider: Cesium.CesiumTerrainProvider.fromIonAssetId(1),
   });
-  addWMSProvider(
+  addWMSsvectorlayer(
     viewer,
     "http://localhost:8081/geoserver/digitalmoon/wms",
     "digitalmoon:MoonDom"
   );
-  addTerrainProvider(viewer);
+
+  // addTerrainProvider(viewer, "http://localhost:8082/");
 });
 
 Cesium.Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmZWFkZjUzYS0zMjNiLTRmNzItYmIzMC00NDNjNzk1MTc1OGEiLCJpZCI6MjAzODkzLCJpYXQiOjE3MTE5NTQ2NjB9.qBJHAwFo4OBYfX0r9U-kI8mmku67MO2nsHhmAcLEauU";
 
-function addWMSProvider(viewer, url, layers, styles = "", where = "1=1") {
+function addWMSsvectorlayer(viewer, url, layers, styles = "", where = "1=1") {
   const options = {
     url: url,
     layers: layers,
@@ -41,34 +43,20 @@ function addWMSProvider(viewer, url, layers, styles = "", where = "1=1") {
   console.log("图像加载");
   return viewer.imageryLayers.length;
 }
-// // 添加地形数据
-// const addTerrainProvider = async (viewer) => {
-//   try {
-//     const terrainProvider = await Cesium.createWorldTerrainAsync({
-//       url: "http://localhost:8082/",
-//     });
-//     viewer.terrainProvider = terrainProvider;
-//     console.log("地形加载");
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
 
-const addTerrainProvider = async (viewer) => {
-  try {
-    const terrainProvider = await Cesium.createWorldTerrainAsync({
-      url: "http://localhost:8082/",
-    });
-    viewer.terrainProvider = terrainProvider;
-    console.log("地形加载");
-  } catch (error) {
-    console.log(`${error}`);
-  }
-};
+function addTerrainProvider(viewer, url) {
+  const terrainProvider = new Cesium.CesiumTerrainProvider({
+    url: url,
+  });
+  viewer.terrainProvider = terrainProvider;
+  console.log("地形加载");
+}
 </script>
 
 <template>
-  <div id="cesiumContainer"></div>
+  <div id="cesiumContainer">
+    
+  </div>
 </template>
 
 <style >
