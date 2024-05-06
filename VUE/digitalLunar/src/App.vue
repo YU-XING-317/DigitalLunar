@@ -1,4 +1,19 @@
 <script setup>
+import cesiumLunar from "./views/cesiumLunar.vue";
+import { ref } from "vue";
+import PlaceSearch from "./components/placeSearch.vue";
+import PointSearch from "./components/pointSearch.vue";
+import mitt from "./hook/mittBus";
+
+const placeSearchRef = ref();
+const placeSearch = () => {
+  placeSearchRef.value.open();
+};
+
+const pointSearchRef = ref();
+const pointSearch = () => {
+  pointSearchRef.value.open();
+};
 </script>
 
 <template>
@@ -7,19 +22,20 @@
       <el-aside class="menu">
         <el-menu>
           <el-menu-item index="1">
-            <span slot="title">地点查询</span>
+            <el-button type="primary" @click="placeSearch">地点搜索</el-button>
           </el-menu-item>
           <el-menu-item index="2">
-            <span slot="title">坐标搜索</span>
+            <el-button type="primary" @click="pointSearch">坐标搜索</el-button>
           </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main class="main">
-        <router-view></router-view>
+        <cesiumLunar />
       </el-main>
     </el-container>
+    <PlaceSearch ref="placeSearchRef"></PlaceSearch>
+    <PointSearch ref="pointSearchRef"></PointSearch>
   </div>
-  <!-- <div id="cesiumContainer"></div> -->
 </template>
 <style >
 html,

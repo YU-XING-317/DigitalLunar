@@ -1,5 +1,6 @@
 <script setup>
 import * as Cesium from "cesium";
+import { vi } from "element-plus/es/locale";
 import { onMounted } from "vue";
 
 onMounted(() => {
@@ -18,7 +19,7 @@ onMounted(() => {
     "http://localhost:8081/geoserver/digitalmoon/wms",
     "digitalmoon:MoonDom"
   );
-
+  viewer.scene.globe.
   // addTerrainProvider(viewer, "http://localhost:8082/");
 });
 
