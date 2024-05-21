@@ -25,3 +25,4 @@ pnpm-debug.log*
 *.sw?
 TIF/globalDEM.tif
 TIF/origin.tif
+TIF/globalDOM.tif

@@ -1,45 +1,15 @@
 <script setup>
 import * as Cesium from "cesium";
+import { el, vi } from "element-plus/es/locale/index.mjs";
 import { onMounted, reactive, watch, ref } from "vue";
 // import { Menu as IconMenu, Message, Setting } from "@element-plus/icons-vue";
 // import mitt from "../hook/mittBus";
 //import { Cesium.Measure } from "../js/cesium-measure";
 import Location from "../assets/point.png";
-Cesium.Ion.defaultAccessToken =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmZWFkZjUzYS0zMjNiLTRmNzItYmIzMC00NDNjNzk1MTc1OGEiLCJpZCI6MjAzODkzLCJpYXQiOjE3MTE5NTQ2NjB9.qBJHAwFo4OBYfX0r9U-kI8mmku67MO2nsHhmAcLEauU";
 
 onMounted(async () => {
-  init();
-  getMouseMove();
-});
-//当前视角
-var mouseMove = reactive({
-  lnt: undefined,
-  lat: undefined,
-});
-function getMouseMove() {
-  let viewer = window.viewer;
-  let handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-  handler.setInputAction(function (movement) {
-    //具体事件的实现
-    var ellipsoid = viewer.scene.globe.ellipsoid;
-    //捕获椭球体，将笛卡尔二维平面坐标转为椭球体的笛卡尔三维坐标，返回球体表面的点
-    var cartesian = viewer.camera.pickEllipsoid(
-      movement.endPosition,
-      ellipsoid
-    );
-    if (cartesian) {
-      //将笛卡尔三维坐标转为地图坐标（弧度）
-      var cartographic =
-        viewer.scene.globe.ellipsoid.cartesianToCartographic(cartesian);
-      //将地图坐标（弧度）转为十进制的度数
-      mouseMove.lat = Cesium.Math.toDegrees(cartographic.latitude);
-      mouseMove.lng = Cesium.Math.toDegrees(cartographic.longitude);
-    }
-  }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-}
-//初始化***************************************************************************** */
-function init() {
+  Cesium.Ion.defaultAccessToken =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmZWFkZjUzYS0zMjNiLTRmNzItYmIzMC00NDNjNzk1MTc1OGEiLCJpZCI6MjAzODkzLCJpYXQiOjE3MTE5NTQ2NjB9.qBJHAwFo4OBYfX0r9U-kI8mmku67MO2nsHhmAcLEauU";
   let viewer = new Cesium.Viewer("cesiumContainer", {
     selectionIndicator: false,
     baseLayerPicker: false,
@@ -52,18 +22,65 @@ function init() {
     navigationHelpButton: false,
     terrainExaggeration: 16,
   });
-  window.viewer = viewer;
+  viewer.scene.globe.enableLighting = false;
+  viewer.scene.globe.showGroundAtmosphere = false;
+  viewer.scene.skyAtmosphere.show = false;
+  //let measure = new Cesium.Measure(viewer);
+  // 空间距离
+  Cesium.TerrainProvider.heightmapTerrainQuality = 0.2;
   addWMSProvider(
     viewer,
     "http://localhost:8081/geoserver/digitalmoon/wms",
     "digitalmoon:moonDom"
   );
   addTerrainProvider(viewer, "http://localhost:8082/");
-  viewer.scene.globe.enableLighting = false;
-  viewer.scene.globe.showGroundAtmosphere = false;
-  viewer.scene.skyAtmosphere.show = false;
-}
-// 地貌
+  //坐标跳转
+  watch(point, (newValue, oldValue) => {
+    console.log("point is changed", newValue, oldValue);
+    setViewer(viewer, Number(newValue.x), Number(newValue.z));
+    viewer.entities.removeAll();
+    if (point.name == "point") {
+      viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(
+          Number(newValue.x),
+          Number(newValue.z),
+          10
+        ),
+        billboard: {
+          image: Location,
+          scale: 0.04,
+        },
+      });
+    } else {
+      viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(
+          Number(newValue.x),
+          Number(newValue.z),
+          10
+        ),
+        label: {
+          text: point.name,
+          fillColor: Cesium.Color.RED,
+          scale: 0.5,
+        },
+      });
+    }
+  });
+  watch(viewSwitch, (newValue, oldValue) => {
+    console.log("viewSwitch is changed", newValue, oldValue);
+    if (newValue == true) {
+      viewer.scene.morphTo3D(2);
+    } else {
+      viewer.scene.morphToColumbusView(2);
+    }
+  });
+  viewer.scene.globe.terrainExaggeration = 256.0;
+  viewer.scene.globe.terrainExaggerationRelativeHeight = 2400.0;
+  console.log("onMounted");
+});
+//******************************************************************************* */
+function init() {}
+
 function addWMSProvider(viewer, url, layers, styles = "", where = "1=1") {
   const options = {
     url: url,
@@ -82,7 +99,7 @@ function addWMSProvider(viewer, url, layers, styles = "", where = "1=1") {
   console.log("图像加载");
   return viewer.imageryLayers.length;
 }
-// 添加地形数据
+// // 添加地形数据
 const addTerrainProvider = async (viewer, url) => {
   try {
     const terrainProvider = await Cesium.CesiumTerrainProvider.fromUrl(url);
@@ -92,74 +109,30 @@ const addTerrainProvider = async (viewer, url) => {
     console.log(`${error}`);
   }
 };
-//Tool-Bar***************************************************************************** */
-//二维、三维切换
-var viewSwitch = ref(true);
-function twoThreeSwitch() {
-  console.log("viewSwitch=", viewSwitch.value);
-  if (viewSwitch.value == true) {
-    window.viewer.scene.morphTo3D(2);
-  } else if (viewSwitch.value == false) {
-    window.viewer.scene.morphToColumbusView(2);
-  }
-}
-// 还原
-function homeButton() {
-  viewer.entities.removeAll();
-  window.viewer.scene.camera.flyHome(2);
-}
-//放大缩小
-function ZoomButton(t) {
-  viewer = window.viewer;
-  var orientation = {
-    heading: Cesium.Math.toRadians(viewer.camera.heading),
-    pitch: Cesium.Math.toRadians(viewer.camera.pitch),
-    roll: viewer.camera.roll,
-  };
-  var position = viewer.camera.positionCartographic;
-  console.log(position, orientation);
-  position.z *= 0.5;
-  var pos = Cesium.Cartesian3.fromDegrees(
-    Cesium.Math.toDegrees(position.longitude),
-    Cesium.Math.toDegrees(position.latitude),
-    position.height * t
-  );
-  window.viewer.camera.flyTo({
-    destination: pos,
+
+function setViewer(viewer, lng, lat) {
+  const position = Cesium.Cartesian3.fromDegrees(lng, lat, 10000000);
+  // const billBoard = new Cesium.Entity({
+  //   position: position,
+  //   billboard: {
+  //     image: "../assets/point.png",
+  //     scale: 1,
+  //   },
+  // });
+  // viewer.entities.add(billBoard);
+  viewer.camera.flyTo({
+    destination: position,
     orientation: {
       heading: Cesium.Math.toRadians(0),
       pitch: Cesium.Math.toRadians(-90),
       roll: 0,
     },
-    duration: 1,
+    duration: 3,
   });
 }
 
-//侧边栏***************************************************************************** */
-// 重置
-const reSetPoint = function () {
-  point.x = "";
-  point.z = "";
-  point.name = "";
-  viewer.entities.removeAll();
-};
-// 地点搜索
-function Search() {
-  for (var i = 0; i < points.length; i++) {
-    if (point.name == points[i].name) {
-      point.x = points[i].x;
-      point.z = points[i].z;
-    }
-  }
-  console.log("Point为", point);
-}
-function placeSearch() {
-  var viewer = window.viewer;
-  const position = Cesium.Cartesian3.fromDegrees(
-    point.x,
-    point.z,
-    viewer.camera.positionCartographic.height
-  );
+function test(viewer) {
+  const position = Cesium.Cartesian3.fromDegrees(1, 1, 10000000);
   viewer.camera.flyTo({
     destination: position,
     orientation: {
@@ -169,58 +142,22 @@ function placeSearch() {
     },
     duration: 3,
   });
-  viewer.entities.removeAll();
   viewer.entities.add({
-    position: Cesium.Cartesian3.fromDegrees(
-      Number(point.x),
-      Number(point.z),
-      10
-    ),
-    label: {
-      text: point.name,
-      fillColor: Cesium.Color.RED,
-      scale: 0.5,
-    },
-  });
-}
-//坐标跳转
-function pointSearch() {
-  var viewer = window.viewer;
-  point.name = "point";
-  console.log(point);
-  const position = Cesium.Cartesian3.fromDegrees(
-    point.x,
-    point.z,
-    viewer.camera.positionCartographic.height
-  );
-  viewer.camera.flyTo({
-    destination: position,
-    orientation: {
-      heading: Cesium.Math.toRadians(0),
-      pitch: Cesium.Math.toRadians(-90),
-      roll: 0,
-    },
-    duration: 3,
-  });
-  viewer.entities.removeAll();
-  viewer.entities.add({
-    position: Cesium.Cartesian3.fromDegrees(
-      Number(point.x),
-      Number(point.z),
-      10
-    ),
+    position: Cesium.Cartesian3.fromDegrees(Number(1), Number(1), 10),
     billboard: {
       image: Location,
       scale: 0.04,
     },
   });
 }
+
 //***********地点数据选择***********/
 var point = reactive({
   name: "",
   x: undefined,
   z: undefined,
 });
+
 const points = reactive([
   {
     name: "知海",
@@ -237,11 +174,26 @@ const points = reactive([
   { name: "澄海", x: 18.4, z: 28 },
   { name: "东海", x: -94.65, z: -19.05 },
 ]);
-
+//********地点搜索**********
+const Search = function () {
+  for (var i = 0; i < 10; i++) {
+    if (point.name == points[i].name) {
+      point.x = points[i].x;
+      point.z = points[i].z;
+    }
+  }
+  console.log("Point为", point);
+};
+const pointSearch = function () {
+  point.name = "point";
+  console.log(point.x, point.z);
+};
+const reSetPoint = function () {
+  point.x = "";
+  point.z = "";
+  point.name = "";
+};
 //***********陨石坑直径选择***********/
-function addProvider() {
-  console.log(diam);
-}
 var diam = reactive({
   range: "",
   url: "",
@@ -292,6 +244,7 @@ var diams = reactive([
     url: "131.1-160",
   },
 ]);
+var viewSwitch = ref(true);
 </script>
 
 <template>
@@ -311,29 +264,26 @@ var diams = reactive([
             --el-switch-on-color: #66ccff;
             --el-switch-off-color: #39c5bb;
           "
-          @click="twoThreeSwitch"
         />
         <!-- 初始视图 -->
-        <el-button type="primary" @click="homeButton">
+        <el-button type="primary" @click="test">
           <el-icon style="vertical-align: middle">
             <el-icon size="20"><House /></el-icon>
           </el-icon>
-          <span style="vertical-align: middle">初始</span>
+          <span style="vertical-align: middle">还原</span>
         </el-button>
-        <!-- 放大缩小 -->
-        <el-button type="primary" @click="ZoomButton(0.5)">
+        <el-button type="primary">
           <el-icon style="vertical-align: middle">
             <el-icon size="20"><ZoomIn /></el-icon>
           </el-icon>
           <span style="vertical-align: middle">放大 </span>
         </el-button>
-        <el-button type="primary" @click="ZoomButton(2)">
+        <el-button type="primary">
           <el-icon style="vertical-align: middle">
             <el-icon size="20"><ZoomOut /></el-icon>
           </el-icon>
           <span style="vertical-align: middle"> 缩小 </span>
         </el-button>
-        <!-- 量测 -->
         <el-button type="primary">
           <el-icon style="vertical-align: middle">
             <el-icon size="20"><Watermelon /></el-icon>
@@ -365,7 +315,14 @@ var diams = reactive([
               <el-menu-item-group>
                 <template #title
                   >地名
-                  <!-- <el-icon @click="reSetPoint" style="position: relative; left: 50% !important"><RefreshRight/></el-icon> -->
+                  <!-- <el-button class="Search-reset" @click="reSetPoint"
+                    >重置</el-button
+                  > -->
+                  <el-icon
+                    @click="reSetPoint"
+                    style="position: relative; left: 50% !important"
+                    ><RefreshRight
+                  /></el-icon>
                 </template>
                 <el-select
                   v-model="point.name"
@@ -381,40 +338,36 @@ var diams = reactive([
                 </el-select>
               </el-menu-item-group>
               <el-menu-item-group title="经度">
-                <el-input class="Search-x" disabled="true" :value="point.x" />
+                <el-input
+                  class="Search-x"
+                  disabled="true"
+                  :v-model="point.x"
+                  :value="point.x"
+                />
               </el-menu-item-group>
               <el-menu-item-group title="纬度">
-                <el-input class="Search-x" disabled="true" :value="point.z" />
-              </el-menu-item-group>
-              <el-menu-item-group>
-                <el-button class="Search-reset" @click="reSetPoint"
-                  >重置</el-button
-                >
-                <el-button
-                  class="Search-check"
-                  type="primary"
-                  @click="placeSearch"
-                >
-                  确认
-                </el-button>
+                <el-input
+                  class="Search-x"
+                  disabled="true"
+                  :v-model="point.z"
+                  :value="point.z"
+                />
               </el-menu-item-group>
             </el-sub-menu>
             <!-- 坐标跳转 -->
             <el-sub-menu index="2">
               <template #title> <el-text tag="b">坐标跳转</el-text> </template>
               <el-menu-item-group title="经度">
-                <el-input
-                  type="number"
-                  v-model.number="point.x"
-                  class="Search-x"
+                <input
+                  v-model="point.x"
+                  style="position: relative; left: 20%; width: 70%"
                   :value="point.x"
                 />
               </el-menu-item-group>
               <el-menu-item-group title="纬度">
-                <el-input
-                  type="number"
-                  v-model.number="point.z"
-                  class="Search-x"
+                <input
+                  v-model="point.z"
+                  style="position: relative; left: 20%; width: 70%"
                   :value="point.z"
                 />
               </el-menu-item-group>
@@ -468,10 +421,7 @@ var diams = reactive([
         </el-scrollbar>
       </el-aside>
     </el-container>
-    <el-foot class="info-bar">
-      <div class="info">经度：{{ mouseMove.lng }}</div>
-      <div class="info">纬度：{{ mouseMove.lat }}</div>
-    </el-foot>
+    <el-foot class="info-bar">233</el-foot>
   </div>
 </template>
 
@@ -505,7 +455,7 @@ var diams = reactive([
   z-index: 1;
 }
 .search-bar {
-  height: 89%;
+  height: 94%;
   top: 6%;
   opacity: 0.8;
   background-color: white;
@@ -516,16 +466,11 @@ var diams = reactive([
 .info-bar {
   width: 100%;
   bottom: 0;
-  height: 5% !important;
-  opacity: 0.6;
+  height: 4% !important;
+  opacity: 0;
   background-color: white;
   position: absolute;
   z-index: 1;
-}
-.info {
-  width: 20%;
-  left: 80%;
-  position: relative;
 }
 .Search {
   left: 20%;

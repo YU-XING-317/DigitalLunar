@@ -16,7 +16,7 @@ defineExpose({
 
 const Search = function () {
   dialogVisible.value = false;
-  for (var i = 0; i < 2; i++) {
+  for (var i = 0; i < 10; i++) {
     console.log(points[i]);
     if (point.name == points[i].name) {
       point.x = points[i].x;
@@ -25,6 +25,7 @@ const Search = function () {
   }
   console.log("Point为");
   console.log(point);
+  mitt.emit("data_name", point.name);
   mitt.emit("data_x", point.x);
   mitt.emit("data_z", point.z);
 };
@@ -41,7 +42,15 @@ const points = reactive([
     x: -22.3,
     z: -10.22,
   },
-  { name: "湿海", x: -38.57, z: -24.0 },
+  { name: "湿海", x: -38.55, z: -23.5 },
+  { name: "云海", x: -17.2, z: -20 },
+  { name: "奢湖", x: 175.5, z: 19.5 },
+  { name: "莫斯科海", x: 148, z: 28 },
+  { name: "危海", x: 59, z: 17.24 },
+  { name: "酒海", x: 34.58, z: -14.5 },
+  { name: "静海", x: 30.8, z: 8.8 },
+  { name: "澄海", x: 18.4, z: 28 },
+  { name: "东海", x: -94.65, z: -19.05 },
 ]);
 </script>
 
