@@ -1,16 +1,14 @@
-<script setup>
+<script setup lang>
 import * as Cesium from "cesium";
 import { onMounted, reactive, watch, ref } from "vue";
-// import { Menu as IconMenu, Message, Setting } from "@element-plus/icons-vue";
-// import mitt from "../hook/mittBus";
-//import { Cesium.Measure } from "../js/cesium-measure";
 import Location from "../assets/point.png";
+import CesiumMeasures from "../js/cesium-measure-draw";
 Cesium.Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmZWFkZjUzYS0zMjNiLTRmNzItYmIzMC00NDNjNzk1MTc1OGEiLCJpZCI6MjAzODkzLCJpYXQiOjE3MTE5NTQ2NjB9.qBJHAwFo4OBYfX0r9U-kI8mmku67MO2nsHhmAcLEauU";
+let viewer = undefined;
 
 onMounted(async () => {
   init();
-  getMouseMove();
 });
 //当前视角
 var mouseMove = reactive({
@@ -18,7 +16,6 @@ var mouseMove = reactive({
   lat: undefined,
 });
 function getMouseMove() {
-  let viewer = window.viewer;
   let handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   handler.setInputAction(function (movement) {
     //具体事件的实现
@@ -38,9 +35,10 @@ function getMouseMove() {
     }
   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 }
+
 //初始化***************************************************************************** */
 function init() {
-  let viewer = new Cesium.Viewer("cesiumContainer", {
+  viewer = new Cesium.Viewer("cesiumContainer", {
     selectionIndicator: false,
     baseLayerPicker: false,
     infoBox: false,
@@ -50,31 +48,30 @@ function init() {
     homeButton: false,
     sceneModePicker: false,
     navigationHelpButton: false,
-    terrainExaggeration: 16,
   });
   window.viewer = viewer;
-  addWMSProvider(
-    viewer,
-    "http://localhost:8081/geoserver/digitalmoon/wms",
-    "digitalmoon:moonDom"
-  );
-  addTerrainProvider(viewer, "http://localhost:8082/");
   viewer.scene.globe.enableLighting = false;
   viewer.scene.globe.showGroundAtmosphere = false;
   viewer.scene.skyAtmosphere.show = false;
+  addWMSProvider("digitalmoon:moonDom");
+  addTerrainProvider("http://localhost:8082/");
+  getMouseMove();
+  // measure = new CesiumMeasures(window.viewer);
+  // console.log("measure", measure);
 }
+
 // 地貌
-function addWMSProvider(viewer, url, layers, styles = "", where = "1=1") {
+function addWMSProvider(layers) {
   const options = {
-    url: url,
+    url: "http://localhost:8081/geoserver/digitalmoon/wms",
     layers: layers,
     parameters: {
       service: "WMS",
       version: "1.3.0",
       format: "image/png",
       transparent: true,
-      styles: styles,
-      cql_filter: where,
+      styles: "",
+      cql_filter: "1=1",
     },
   };
   const provider = new Cesium.WebMapServiceImageryProvider(options);
@@ -83,7 +80,7 @@ function addWMSProvider(viewer, url, layers, styles = "", where = "1=1") {
   return viewer.imageryLayers.length;
 }
 // 添加地形数据
-const addTerrainProvider = async (viewer, url) => {
+const addTerrainProvider = async (url) => {
   try {
     const terrainProvider = await Cesium.CesiumTerrainProvider.fromUrl(url);
     viewer.terrainProvider = terrainProvider;
@@ -98,26 +95,29 @@ var viewSwitch = ref(true);
 function twoThreeSwitch() {
   console.log("viewSwitch=", viewSwitch.value);
   if (viewSwitch.value == true) {
-    window.viewer.scene.morphTo3D(2);
+    viewer.scene.morphTo3D(2);
   } else if (viewSwitch.value == false) {
-    window.viewer.scene.morphToColumbusView(2);
+    viewer.scene.morphToColumbusView(2);
   }
 }
 // 还原
 function homeButton() {
-  viewer.entities.removeAll();
-  window.viewer.scene.camera.flyHome(2);
+  viewSwitch.value = true;
+  viewer.scene.morphTo3D(2);
+  reSetPoint();
+  reSetProvider();
+  viewer.scene.camera.flyHome(2);
 }
 //放大缩小
 function ZoomButton(t) {
   viewer = window.viewer;
-  var orientation = {
-    heading: Cesium.Math.toRadians(viewer.camera.heading),
-    pitch: Cesium.Math.toRadians(viewer.camera.pitch),
-    roll: viewer.camera.roll,
-  };
+  // var orientation = {
+  //   heading: Cesium.Math.toRadians(viewer.camera.heading),
+  //   pitch: Cesium.Math.toRadians(viewer.camera.pitch),
+  //   roll: viewer.camera.roll,
+  // };
   var position = viewer.camera.positionCartographic;
-  console.log(position, orientation);
+  console.log(position);
   position.z *= 0.5;
   var pos = Cesium.Cartesian3.fromDegrees(
     Cesium.Math.toDegrees(position.longitude),
@@ -134,7 +134,75 @@ function ZoomButton(t) {
     duration: 1,
   });
 }
+//***********量测***********/
+//测距
+function drawLine() {
+  const measure = new CesiumMeasures(viewer);
+  measure.drawLineMeasureGraphics({
+    clampToGround: false,
+    measure: true,
+    style: {
+      line: {
+        width: 2,
+        material: Cesium.Color.BLUE.withAlpha(0.8),
+      },
+      point: {
+        color: Cesium.Color.RED,
+        pixelSize: 5,
+        outlineColor: Cesium.Color.GREEN,
+        outlineWidth: 3,
+        show: true, //默认是显示点位
+      },
+    },
+    callback: (e) => {
+      console.log(e, "88888888888");
+    },
+  });
+}
+function area() {
+  const measure = new CesiumMeasures(viewer);
+  measure.drawAreaMeasureGraphics({
+    clampToGround: false,
+    measure: true,
+    style: {
+      line: {
+        width: 2,
+        material: Cesium.Color.RED.withAlpha(0.8),
+        show: true, //默认为true
+      },
+      point: {
+        pixelSize: 5,
+        outlineColor: Cesium.Color.BLUE,
+        outlineWidth: 2,
+        show: true, //默认为true
+      },
+      polygon: {
+        material: Cesium.Color.GREEN.withAlpha(0.1),
+      },
+      //如果不设置centerPoint则会把测量的位置现在在最后一个点击的位置
+      centerPoint: {
+        pixelSize: 5,
+        outlineColor: Cesium.Color.RED,
+        outlineWidth: 2,
+      },
+    },
+    callback: (e) => {
+      console.log(e, "88888888888");
+    },
+  });
+}
+function measureClean() {
+  var dataSource = viewer.dataSources.getByName("measureLayer")[0];
+  // 确保数据源存在
 
+  if (Cesium.defined(dataSource)) {
+    // 这里可以使用 dataSource 对象进行进一步的操作
+    console.log("成功获取到数据源:", dataSource);
+    viewer.dataSources.removeAll();
+  } else {
+    console.log("未找到名为 measureLayer 的数据源。");
+  }
+}
 //侧边栏***************************************************************************** */
 // 重置
 const reSetPoint = function () {
@@ -167,7 +235,7 @@ function placeSearch() {
       pitch: Cesium.Math.toRadians(-90),
       roll: 0,
     },
-    duration: 3,
+    duration: 2,
   });
   viewer.entities.removeAll();
   viewer.entities.add({
@@ -200,7 +268,7 @@ function pointSearch() {
       pitch: Cesium.Math.toRadians(-90),
       roll: 0,
     },
-    duration: 3,
+    duration: 2,
   });
   viewer.entities.removeAll();
   viewer.entities.add({
@@ -241,57 +309,59 @@ const points = reactive([
 //***********陨石坑直径选择***********/
 function addProvider() {
   console.log(diam);
+  const options = {
+    url: "http://localhost:8081/geoserver/digitalmoon/wms",
+    layers: "digitalmoon:1",
+    parameters: {
+      service: "WMS",
+      version: "1.3.0",
+      format: "image/png",
+      transparent: true,
+      styles: "",
+      cql_filter: "1=1",
+    },
+  };
+  const provider = new Cesium.WebMapServiceImageryProvider(options);
+  viewer.imageryLayers.addImageryProvider(provider);
+  console.log("图像加载");
+}
+function reSetProvider() {
+  diam.range = "";
+  console.log(diam);
+  const options = {
+    url: "http://localhost:8081/geoserver/digitalmoon/wms",
+    layers: "digitalmoon:moonDom",
+    parameters: {
+      service: "WMS",
+      version: "1.3.0",
+      format: "image/png",
+      transparent: true,
+      styles: "",
+      cql_filter: "1=1",
+    },
+  };
+  const provider = new Cesium.WebMapServiceImageryProvider(options);
+  viewer.imageryLayers.addImageryProvider(provider);
 }
 var diam = reactive({
   range: "",
-  url: "",
 });
-var diams = reactive([
-  {
-    range: "2.5-3.5",
-    url: "2.5-3.5",
-  },
-  {
-    range: "3.5-5",
-    url: "3.5-5",
-  },
-  {
-    range: "5-7.1",
-    url: "5-7.1",
-  },
-  {
-    range: "7.1-10",
-    url: "7.1-10",
-  },
-  {
-    range: "10-14.1",
-    url: "10-14.1",
-  },
-  {
-    range: "14.1-20",
-    url: "14.1-20",
-  },
-  {
-    range: "28.3-40",
-    url: "28.3-40",
-  },
-  {
-    range: "40-56.6",
-    url: "40-56.6",
-  },
-  {
-    range: "56.6-80",
-    url: "56.6-80",
-  },
-  {
-    range: "80-131.1",
-    url: "80-131.1",
-  },
-  {
-    range: "131.1-160",
-    url: "131.1-160",
-  },
+const diams = reactive([
+  { range: "2.5-3.5" },
+  { range: "3.5-5" },
+  { range: "5-7.1" },
+  { range: "7.1-10" },
+  { range: "10-14.1" },
+  { range: "14.1-20" },
+  { range: "28.3-40" },
+  { range: "40-56.6" },
+  { range: "56.6-80" },
+  { range: "80-131.1" },
+  { range: "131.1-160" },
 ]);
+function diamChange() {
+  console.log(diam);
+}
 </script>
 
 <template>
@@ -334,19 +404,19 @@ var diams = reactive([
           <span style="vertical-align: middle"> 缩小 </span>
         </el-button>
         <!-- 量测 -->
-        <el-button type="primary">
+        <el-button type="primary" @click="drawLine">
           <el-icon style="vertical-align: middle">
             <el-icon size="20"><Watermelon /></el-icon>
           </el-icon>
           <span style="vertical-align: middle"> 测距 </span>
         </el-button>
-        <el-button type="primary">
+        <el-button type="primary" @click="area">
           <el-icon style="vertical-align: middle">
             <el-icon size="20"><Mug /></el-icon>
           </el-icon>
           <span style="vertical-align: middle"> 面积 </span>
         </el-button>
-        <el-button type="primary">
+        <el-button type="primary" @click="measureClean">
           <el-icon style="vertical-align: middle">
             <el-icon size="20"><Delete /></el-icon>
           </el-icon>
@@ -438,21 +508,17 @@ var diams = reactive([
               </template>
               <el-menu-item-group>
                 <template #title>陨石坑直径选择</template>
-                <el-select
-                  v-model="diam.range"
-                  clearable
-                  filterable
-                  class="Search"
-                >
+                <el-select v-model="diam.range" filterable class="Search">
                   <el-option
                     v-for="item in diams"
                     :key="item"
                     :value="item.range"
+                    @change="diamChange"
                   ></el-option>
                 </el-select>
               </el-menu-item-group>
               <el-menu-item-group>
-                <el-button class="Search-reset" @click="cleanProvider"
+                <el-button class="Search-reset" @click="reSetProvider"
                   >重置</el-button
                 >
                 <el-button

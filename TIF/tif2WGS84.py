@@ -11,9 +11,12 @@ transform = dataset.GetGeoTransform()
 
 tf=ds.GetGeoTransform()
 print(f"原文件Transfrom属性：\n{transform}")
-print(dataset.GetProjection())
+print()
 print(f"参考文件Transfrom属性：\n{tf}")
 #dataset.SetGeoTransform(a)
 dataset.SetProjection(ds.GetProjection())
-# # print(f"修改后Transfrom属性：\n{transform}")
+print(f"Transfrom属性：\n{transform}")
+print(f"Projection属性：\n{dataset.GetProjection()}")
+
+
 
