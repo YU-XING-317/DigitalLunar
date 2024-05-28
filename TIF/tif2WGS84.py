@@ -1,6 +1,6 @@
 from osgeo import gdal
 
-dataset = gdal.Open('D:\\TIF\\LU1319373_Wang&Wu_2021\\R-Value Maps\\2.5-3.5.tif',gdal.GA_Update)
+dataset = gdal.Open('D:\School\DigitalLunar\TIF\globalDOM.tif',gdal.GA_Update)
 ds = gdal.Open("D:\TIF\globalDEM_WGS84.tif", gdal.GA_ReadOnly)
 #获取宽高
 width = dataset.RasterXSize
@@ -11,12 +11,12 @@ transform = dataset.GetGeoTransform()
 
 tf=ds.GetGeoTransform()
 print(f"原文件Transfrom属性：\n{transform}")
-print()
+print(f"原文件projection属性：\n{dataset.GetProjection()}")
 print(f"参考文件Transfrom属性：\n{tf}")
-#dataset.SetGeoTransform(a)
-dataset.SetProjection(ds.GetProjection())
-print(f"Transfrom属性：\n{transform}")
-print(f"Projection属性：\n{dataset.GetProjection()}")
+# dataset.SetGeoTransform(a)
+# dataset.SetProjection(ds.GetProjection())
+# print(f"Transfrom属性：\n{transform}")
+# print(f"Projection属性：\n{dataset.GetProjection()}")
 
 
 

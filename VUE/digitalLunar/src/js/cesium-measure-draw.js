@@ -1,8 +1,6 @@
 import * as Cesium from "cesium";
 if (typeof Cesium !== "undefined")
   /**
-    
-    * @author zhangti
     * @param viewer  {object} 三维对象
     * @param options {object} 初始化参数
     * @constructor

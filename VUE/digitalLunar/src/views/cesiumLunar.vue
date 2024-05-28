@@ -3,6 +3,8 @@ import * as Cesium from "cesium";
 import { onMounted, reactive, watch, ref } from "vue";
 import Location from "../assets/point.png";
 import CesiumMeasures from "../js/cesium-measure-draw";
+//import "../js/GeoserverTerrainProvider";
+//import * from "../js/GeoserverTerrainProvider";
 Cesium.Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmZWFkZjUzYS0zMjNiLTRmNzItYmIzMC00NDNjNzk1MTc1OGEiLCJpZCI6MjAzODkzLCJpYXQiOjE3MTE5NTQ2NjB9.qBJHAwFo4OBYfX0r9U-kI8mmku67MO2nsHhmAcLEauU";
 let viewer = undefined;
@@ -56,8 +58,6 @@ function init() {
   addWMSProvider("digitalmoon:moonDom");
   addTerrainProvider("http://localhost:8082/");
   getMouseMove();
-  // measure = new CesiumMeasures(window.viewer);
-  // console.log("measure", measure);
 }
 
 // 地貌
@@ -82,6 +82,7 @@ function addWMSProvider(layers) {
 // 添加地形数据
 const addTerrainProvider = async (url) => {
   try {
+    //const provider = await Cesium.GeoserverTerrainProvider
     const terrainProvider = await Cesium.CesiumTerrainProvider.fromUrl(url);
     viewer.terrainProvider = terrainProvider;
     console.log("地形加载");
@@ -309,9 +310,11 @@ const points = reactive([
 //***********陨石坑直径选择***********/
 function addProvider() {
   console.log(diam);
+  const layer = "digitalmoon:" + diam.range;
+  console.log(layer);
   const options = {
     url: "http://localhost:8081/geoserver/digitalmoon/wms",
-    layers: "digitalmoon:1",
+    layers: layer,
     parameters: {
       service: "WMS",
       version: "1.3.0",
@@ -356,8 +359,8 @@ const diams = reactive([
   { range: "28.3-40" },
   { range: "40-56.6" },
   { range: "56.6-80" },
-  { range: "80-131.1" },
-  { range: "131.1-160" },
+  { range: "80-113.1" },
+  { range: "113.1-160" },
 ]);
 function diamChange() {
   console.log(diam);
