@@ -55,15 +55,18 @@ function init() {
   viewer.scene.globe.enableLighting = false;
   viewer.scene.globe.showGroundAtmosphere = false;
   viewer.scene.skyAtmosphere.show = false;
-  addWMSProvider("digitalmoon:moonDom");
+  addWMSProvider(
+    "http://localhost:8081/geoserver/digitalmoon/wms",
+    "digitalmoon:moonDom"
+  );
   addTerrainProvider("http://localhost:8082/");
   getMouseMove();
 }
 
 // 地貌
-function addWMSProvider(layers) {
+function addWMSProvider(url, layers) {
   const options = {
-    url: "http://localhost:8081/geoserver/digitalmoon/wms",
+    url: url,
     layers: layers,
     parameters: {
       service: "WMS",
@@ -304,7 +307,12 @@ const points = reactive([
   { name: "酒海", x: 34.58, z: -14.5 },
   { name: "静海", x: 30.8, z: 8.8 },
   { name: "澄海", x: 18.4, z: 28 },
-  { name: "东海", x: -94.65, z: -19.05 },
+  { name: "席卡尔德坑", x: -55.11, z: -44.38 },
+  { name: "克拉维斯坑", x: -14.73, z: -58.62 },
+  { name: "巴伊坑", x: -66.82, z: -68.9 },
+  { name: "朗道坑", x: -11934, z: -42.16 },
+  { name: "阿波罗坑", x: -151.48, z: -35.69 },
+  { name: "奥本海默坑", x: 166.03, z: -35.32 },
 ]);
 
 //***********陨石坑直径选择***********/

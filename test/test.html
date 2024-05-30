@@ -10,7 +10,7 @@
             const container = document.getElementById('cesiumContainer');
             const terrainProvider = await Cesium.GeoserverTerrainProvider({
                 "url": "http://localhost:8081/geoserver",
-                "layerName": "digitalmoon:globalDEM"
+                "layerName": "digitalmoon:DEM"
             });
 
             viewer = new Cesium.Viewer("cesiumContainer", {
@@ -43,6 +43,9 @@
             };
             const provider = new Cesium.WebMapServiceImageryProvider(options);
             viewer.imageryLayers.addImageryProvider(provider);
+            viewer.scene.globe.enableLighting = false;
+            viewer.scene.globe.showGroundAtmosphere = false;
+            viewer.scene.skyAtmosphere.show = false;
             console.log("图像加载");
             return viewer.imageryLayers.length;
         }
